@@ -1,0 +1,27 @@
+name: Deploy Back4App Cloud Code
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Back4App CLI
+        run: |
+          curl https://raw.githubusercontent.com/back4app/parse-cli/back4app/installer.sh | sudo /bin/bash
+
+      - name: Configure Back4App
+        run: |
+          b4a configure accountkey "${{ secrets.BACK4APP_ACCOUNT_KEY }}"
+
+      - name: Deploy
+        run: |
+          b4a deploy
