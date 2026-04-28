@@ -1,0 +1,49 @@
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment / secrets
+.env
+.env.*
+*.env
+
+# Back4App local config (optional: ignore if you don't want to commit local aliases)
+# If you rely on these in CI, DO commit them
+# parse.local
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+*.tmp
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# Backup / junk files (your current pain point)
+*.bak
+*.backup
+*_backup.js
+*_old.js
+*_copy.js
+*~
+*.swp
+
+# OS / misc
+Thumbs.db
+
+# Test / coverage (if you add later)
+coverage/
+.nyc_output/
+
+# Build artifacts (just in case)
+dist/
+build/
