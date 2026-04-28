@@ -1,4 +1,45 @@
-// This function builds the prompt for the examiner agent based on the oral case, current conversation state, and prior turns. It includes detailed instructions for how the examiner should evaluate the candidate's response and determine the next question to ask. The prompt is designed to guide the examiner in a consistent and clinically relevant manner while adhering to the style and expectations of the American Board of Thoracic Surgery oral examination.
+// This function builds the prompt for the examiner agent based on the oral case, current conversation state, and prior turns. It includes detailed instructions for how the examiner should evaluate the candidate's response and determine the next question to ask.
+const SPECIALTY_BOARD_NAMES = {
+  "general surgery": "American Board of Surgery",
+  surgery: "American Board of Surgery",
+  thoracic: "American Board of Thoracic Surgery",
+  "thoracic surgery": "American Board of Thoracic Surgery",
+  cardiothoracic: "American Board of Thoracic Surgery",
+  "cardiothoracic surgery": "American Board of Thoracic Surgery"
+};
+
+function normalizeSpecialty(value) {
+  return String(value || "").trim().toLowerCase().replace(/[_-]+/g, " ");
+}
+
+function toTitleCase(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[_-]+/g, " ")
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function getBoardName(oralCase) {
+  const explicitBoardName = oralCase.get("boardName");
+  if (typeof explicitBoardName === "string" && explicitBoardName.trim()) {
+    return explicitBoardName.trim();
+  }
+
+  const specialty = oralCase.get("specialty");
+  const normalizedSpecialty = normalizeSpecialty(specialty);
+  if (SPECIALTY_BOARD_NAMES[normalizedSpecialty]) {
+    return SPECIALTY_BOARD_NAMES[normalizedSpecialty];
+  }
+
+  if (normalizedSpecialty) {
+    return `American Board of ${toTitleCase(specialty)}`;
+  }
+
+  return "American Board of Surgery";
+}
+
 function buildPrompt({
   oralCase,
   currentExaminerPrompt,
@@ -22,13 +63,14 @@ Candidate: ${turn.get("candidateResponse")}`;
   const accumulatedMinor = (session.minorErrors || []).join("\n");
   const turnCount = session.turnCount || priorTurns.length;
   const maxTurns = session.maxTurnsOverride || oralCase.get("maxTurns") || 6;
+  const boardName = getBoardName(oralCase);
 
   const requiredMustCoverPoints = session.requiredMustCoverPoints ?? (oralCase.get("mustCoverPoints") || []).length;
   const allowedMajorErrors = session.allowedMajorErrors ?? 0;
   const allowedMinorErrors = session.allowedMinorErrors ?? 2;
 
   return `
-You are an examiner for the American Board of Thoracic Surgery oral examination.
+You are an examiner for the ${boardName} oral examination.
 
 STYLE:
 Be concise, direct, and professional.
