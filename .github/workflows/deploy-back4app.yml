@@ -20,7 +20,7 @@ jobs:
 
       - name: Configure Back4App
         run: |
-          b4a configure accountkey "${{ secrets.BACK4APP_ACCOUNT_KEY }}"
+          printf "%s\n" "${{ secrets.BACK4APP_ACCOUNT_KEY }}" | b4a configure accountkey
 
       - name: Deploy
         run: |
