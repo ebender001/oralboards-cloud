@@ -1,0 +1,10 @@
+{
+  "applications": {
+    "OralBoards": {
+      "applicationId": "DJ4wqUtv7PFZT0icQxfjH9ZrrS9DEbJmo6eUhooD"
+    },
+    "_default": {
+      "link": "OralBoards"
+    }
+  }
+}
