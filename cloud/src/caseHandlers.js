@@ -1,10 +1,13 @@
 const { openai, OPENAI_MODEL } = require('./config');
-const { requireString, getRandomCase, getSessionWithCase, getTurns, deleteTurnsForSession, mergeUnique } = require('./utils');
+const { requireString, getRandomCase, recordServedCase, getSessionWithCase, getTurns, deleteTurnsForSession, mergeUnique } = require('./utils');
 const { buildScoringCatalog, normalizeModelItems, detectConceptMentions } = require('./scoring');
 const { buildPrompt } = require('./promptBuilder');
 
 Parse.Cloud.define("startOralCase", async (request) => {
   const caseId = request.params.caseId;
+  const clientInstanceId = typeof request.params.clientInstanceId === "string"
+    ? request.params.clientInstanceId.trim()
+    : "";
   const selectedSpecialty = request.params.specialty;
   const normalizedSelectedSpecialty = typeof selectedSpecialty === "string"
     ? selectedSpecialty.trim()
@@ -23,6 +26,7 @@ Parse.Cloud.define("startOralCase", async (request) => {
 
     console.log("*****START ORAL CASE BY CASE ID:", {
       requestedCaseId: caseId,
+      clientInstanceId,
       selectedSpecialty: normalizedSelectedSpecialty,
       caseSpecialty: oralCase.get("specialty"),
       caseTitle: oralCase.get("title"),
@@ -38,12 +42,15 @@ Parse.Cloud.define("startOralCase", async (request) => {
         "Selected case does not match requested specialty"
       );
     }
+
+    await recordServedCase(clientInstanceId, normalizedSelectedSpecialty || oralCase.get("specialty"), oralCase);
   } else {
     console.log("*****START ORAL CASE RANDOM:", {
+      clientInstanceId,
       selectedSpecialty: normalizedSelectedSpecialty,
     });
     caseSelectionSource = "random";
-    oralCase = await getRandomCase(normalizedSelectedSpecialty);
+    oralCase = await getRandomCase(normalizedSelectedSpecialty, clientInstanceId);
   }
 
   const caseSpecialty = oralCase.get("specialty");
@@ -68,6 +75,7 @@ Parse.Cloud.define("startOralCase", async (request) => {
 
   console.log("*****START ORAL CASE SELECTED CASE:", {
     requestedSpecialty: normalizedSelectedSpecialty,
+    clientInstanceId,
     returnedCaseSpecialty: caseSpecialty,
     returnedCaseId: oralCase.get("caseId") || oralCase.id,
     returnedCaseTitle: oralCase.get("title"),
@@ -84,6 +92,9 @@ Parse.Cloud.define("startOralCase", async (request) => {
   session.set("minorErrors", []);
   session.set("completionReason", "");
 
+  if (clientInstanceId) {
+    session.set("clientInstanceId", clientInstanceId);
+  }
   if (typeof requiredMustCoverPoints === "number") {
     session.set("requiredMustCoverPoints", requiredMustCoverPoints);
   }
@@ -105,6 +116,7 @@ Parse.Cloud.define("startOralCase", async (request) => {
     caseTitle: oralCase.get("title"),
     caseStem: oralCase.get("stem"),
     examinerPrompt: oralCase.get("firstQuestion"),
+    clientInstanceId: clientInstanceId || undefined,
     requestedSpecialty: normalizedSelectedSpecialty,
     specialty: caseSpecialty,
     caseSelectionSource,

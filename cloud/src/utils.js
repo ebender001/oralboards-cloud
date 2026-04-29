@@ -9,7 +9,57 @@ function requireString(params, key) {
   return value.trim();
 }
 
-async function getRandomCase(specialty) {
+const ALL_SPECIALTIES_ROTATION_KEY = "__all__";
+
+function normalizeOptionalString(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function getRotationSpecialtyKey(specialty) {
+  const normalizedSpecialty = normalizeOptionalString(specialty);
+  return normalizedSpecialty || ALL_SPECIALTIES_ROTATION_KEY;
+}
+
+async function getOrCreateCaseRotation(clientInstanceId, specialty) {
+  const normalizedClientInstanceId = normalizeOptionalString(clientInstanceId);
+  if (!normalizedClientInstanceId) {
+    return null;
+  }
+
+  const specialtyKey = getRotationSpecialtyKey(specialty);
+  const query = new Parse.Query("OralCaseRotation");
+  query.equalTo("clientInstanceId", normalizedClientInstanceId);
+  query.equalTo("specialtyKey", specialtyKey);
+
+  let rotation = await query.first({ useMasterKey: true });
+  if (!rotation) {
+    rotation = new Parse.Object("OralCaseRotation");
+    rotation.set("clientInstanceId", normalizedClientInstanceId);
+    rotation.set("specialtyKey", specialtyKey);
+    rotation.set("servedCaseIds", []);
+  }
+
+  return rotation;
+}
+
+function chooseRandomCase(cases) {
+  return cases[Math.floor(Math.random() * cases.length)];
+}
+
+async function recordServedCase(clientInstanceId, specialty, oralCase) {
+  const rotation = await getOrCreateCaseRotation(clientInstanceId, specialty);
+  if (!rotation || !oralCase) {
+    return;
+  }
+
+  const servedCaseIds = rotation.get("servedCaseIds") || [];
+  if (!servedCaseIds.includes(oralCase.id)) {
+    rotation.set("servedCaseIds", [...servedCaseIds, oralCase.id]);
+    await rotation.save(null, { useMasterKey: true });
+  }
+}
+
+async function getRandomCase(specialty, clientInstanceId) {
   const query = new Parse.Query("OralCase");
   query.equalTo("isActive", true);
 
@@ -30,7 +80,25 @@ async function getRandomCase(specialty) {
     );
   }
 
-  return cases[Math.floor(Math.random() * cases.length)];
+  const rotation = await getOrCreateCaseRotation(clientInstanceId, specialty);
+  if (!rotation) {
+    return chooseRandomCase(cases);
+  }
+
+  const activeCaseIds = new Set(cases.map((oralCase) => oralCase.id));
+  const servedCaseIds = (rotation.get("servedCaseIds") || []).filter((caseId) =>
+    activeCaseIds.has(caseId)
+  );
+
+  const unservedCases = cases.filter((oralCase) => !servedCaseIds.includes(oralCase.id));
+  const candidateCases = unservedCases.length ? unservedCases : cases;
+  const selectedCase = chooseRandomCase(candidateCases);
+  const nextServedCaseIds = unservedCases.length ? servedCaseIds : [];
+
+  rotation.set("servedCaseIds", [...nextServedCaseIds, selectedCase.id]);
+  await rotation.save(null, { useMasterKey: true });
+
+  return selectedCase;
 }
 
 async function getSessionWithCase(sessionId) {
@@ -67,6 +135,7 @@ function mergeUnique(existing = [], incoming = []) {
 module.exports = {
   requireString,
   getRandomCase,
+  recordServedCase,
   getSessionWithCase,
   getTurns,
   deleteTurnsForSession,
