@@ -387,8 +387,19 @@ Parse.Cloud.define("submitOralResponse", async (request) => {
 
   if (finalIsCaseComplete) {
     session.set("status", "completed");
-    if (!session.get("caseEndedAt")) {
-      session.set("caseEndedAt", new Date());
+    const existingCaseEndedAt = session.get("caseEndedAt");
+    const caseEndedAt = existingCaseEndedAt instanceof Date ? existingCaseEndedAt : new Date();
+
+    if (!existingCaseEndedAt) {
+      session.set("caseEndedAt", caseEndedAt);
+    }
+
+    if (session.createdAt instanceof Date) {
+      const durationSeconds = Math.max(
+        0,
+        Math.floor((caseEndedAt.getTime() - session.createdAt.getTime()) / 1000)
+      );
+      session.set("durationSeconds", durationSeconds);
     }
   }
 
