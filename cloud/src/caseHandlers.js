@@ -355,6 +355,9 @@ Parse.Cloud.define("submitOralResponse", async (request) => {
 
   if (finalIsCaseComplete) {
     session.set("status", "completed");
+    if (!session.get("caseEndedAt")) {
+      session.set("caseEndedAt", new Date());
+    }
   }
 
   session.set("completionReason", finalCompletionReason);
