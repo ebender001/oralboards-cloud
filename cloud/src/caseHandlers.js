@@ -227,6 +227,32 @@ Parse.Cloud.define("submitOralResponse", async (request) => {
                 required: ["label", "evidence"]
               }
             },
+            missed_concepts: {
+              type: "array",
+              items: {
+                type: "object",
+                additionalProperties: false,
+                properties: {
+                  label: { type: "string" },
+                  severity: { type: "string", enum: ["major", "minor"] },
+                  missed_concept: { type: "string" }
+                },
+                required: ["label", "severity", "missed_concept"]
+              }
+            },
+            examiner_was_looking_for: {
+              type: "array",
+              items: {
+                type: "object",
+                additionalProperties: false,
+                properties: {
+                  label: { type: "string" },
+                  severity: { type: "string", enum: ["major", "minor"] },
+                  explanation: { type: "string" }
+                },
+                required: ["label", "severity", "explanation"]
+              }
+            },
             is_case_complete: { type: "boolean" },
             completion_reason: { type: "string" }
           },
@@ -239,6 +265,8 @@ Parse.Cloud.define("submitOralResponse", async (request) => {
             "point_evidence",
             "major_error_evidence",
             "minor_error_evidence",
+            "missed_concepts",
+            "examiner_was_looking_for",
             "is_case_complete",
             "completion_reason"
           ]
@@ -309,6 +337,8 @@ Parse.Cloud.define("submitOralResponse", async (request) => {
   const pointEvidence = parsed.point_evidence || [];
   const majorErrorEvidence = parsed.major_error_evidence || [];
   const minorErrorEvidence = parsed.minor_error_evidence || [];
+  const missedConcepts = parsed.missed_concepts || [];
+  const examinerWasLookingFor = parsed.examiner_was_looking_for || [];
 
   const turn = new Parse.Object("OralExamTurn");
   turn.set("session", session);
@@ -323,6 +353,8 @@ Parse.Cloud.define("submitOralResponse", async (request) => {
   turn.set("pointEvidence", pointEvidence);
   turn.set("majorErrorEvidence", majorErrorEvidence);
   turn.set("minorErrorEvidence", minorErrorEvidence);
+  turn.set("missedConcepts", missedConcepts);
+  turn.set("examinerWasLookingFor", examinerWasLookingFor);
   turn.set("completionReason", parsed.completion_reason || "");
   await turn.save(null, { useMasterKey: true });
 
@@ -369,9 +401,11 @@ Parse.Cloud.define("submitOralResponse", async (request) => {
   return {
     nextExaminerPrompt: parsed.next_examiner_prompt,
     briefEvaluation: parsed.brief_evaluation,
-    pointEvidence: parsed.point_evidence || [],
-    majorErrorEvidence: parsed.major_error_evidence || [],
-    minorErrorEvidence: parsed.minor_error_evidence || [],
+    pointEvidence,
+    majorErrorEvidence,
+    minorErrorEvidence,
+    missedConcepts,
+    examinerWasLookingFor,
     isCaseComplete: finalIsCaseComplete,
     completionReason: finalCompletionReason,
     coveredPoints,

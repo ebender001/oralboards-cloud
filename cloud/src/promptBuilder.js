@@ -189,6 +189,10 @@ INSTRUCTIONS
 4c. If the candidate made a NEW major error, challenge the candidate to clarify, justify, or expand on the unsafe statement before declaring the issue resolved.
 4d. The follow-up question should probe whether the candidate truly understands the consequence of the error and can correct or manage it.
 4e. If the candidate made a NEW minor error, ask a corrective or clarifying follow-up question in that same domain.
+4f. If THIS response contains any NEW major or minor critical error, generate concise educational feedback explaining what the examiner was looking for.
+4g. Error feedback must be board-style and action-oriented, limited to 1-3 sentences per error, and focused on management priorities, operative decision-making, or patient safety.
+4h. Error feedback should not sound punitive.
+4i. Generate error feedback only for newly assigned errors in THIS turn. Do not generate feedback for correct responses, prior errors, or turns with no new errors.
 5. If the candidate's response is incomplete but not unsafe, ask a follow-up question that targets the most important missing management step.
 6. If the candidate's response is appropriate and safe, progress the case logically with the next most relevant examiner question.
 7. Escalate the scenario only when it is clinically logical based on the candidate's actions or omissions.
@@ -260,6 +264,8 @@ Return JSON with EXACT keys:
 - point_evidence (array of objects with keys: label, evidence)
 - major_error_evidence (array of objects with keys: label, evidence)
 - minor_error_evidence (array of objects with keys: label, evidence)
+- missed_concepts (array of objects with keys: label, severity, missed_concept)
+- examiner_was_looking_for (array of objects with keys: label, severity, explanation)
 - is_case_complete (boolean)
 - completion_reason (string)
 
@@ -271,6 +277,20 @@ Evidence rules:
 - The evidence field must be a short direct quote or tight paraphrase from the candidate response in THIS turn only.
 - Evidence should closely reflect the candidate’s actual wording; avoid adding new clinical meaning in paraphrase.
 - If no items are present in a category, return an empty array for that evidence array.
+
+Error feedback rules:
+- missed_concepts must contain one object for each label in new_major_errors and new_minor_errors.
+- examiner_was_looking_for must contain one object for each label in new_major_errors and new_minor_errors.
+- The label field must exactly match the corresponding error label.
+- The severity field must be exactly "major" or "minor".
+- missed_concept should be a short phrase describing the key concept the candidate missed.
+- explanation should be a concise 1-3 sentence explanation of the expected board-style answer.
+- If new_major_errors and new_minor_errors are both empty, return [] for missed_concepts and examiner_was_looking_for.
+- Do not create missed concepts or examiner explanations for issues that are not listed as NEW errors in THIS turn.
+
+Example style only; do not copy unless it applies to this case:
+- missed_concept: "Immediate source control for hemorrhage"
+- explanation: "The expected answer is to prioritize rapid control of bleeding while resuscitation continues. On boards, state the immediate operative step, communicate with anesthesia, and avoid delaying definitive management when the patient is unstable."
 
 ---------------------
 FINAL VALIDATION BEFORE RETURNING JSON
@@ -290,6 +310,9 @@ FINAL VALIDATION BEFORE RETURNING JSON
 - Do not penalize the candidate for failing to mention a future management issue before the examiner has asked about or advanced to that phase.
 - If the candidate answered the current examiner prompt correctly, continue the case rather than assigning an anticipatory omission error.
 - Only count an omission once the conversation has clearly moved beyond the expected timing for that issue.
+- If new_major_errors or new_minor_errors are non-empty, missed_concepts and examiner_was_looking_for must each include matching objects for every returned error label.
+- If there are no new errors, missed_concepts and examiner_was_looking_for must both be empty arrays.
+- Do not create missed concepts or examiner explanations for issues that are not listed as NEW errors in THIS turn.
 `;
 }
 
