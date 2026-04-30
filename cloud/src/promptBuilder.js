@@ -222,6 +222,15 @@ GENERAL FLOW GUIDANCE:
 - If the case clearly requires surgery, do not remain in diagnostic questioning longer than necessary.
 - High-value questions should test operative judgment rather than broad medical knowledge once diagnosis is established.
 
+RESPONSE-DRIVEN FOLLOW-UP:
+- The next_examiner_prompt must be driven primarily by the candidate's most recent response.
+- If the candidate omitted, misstated, or gave a vague answer to the most important issue in the current prompt, ask a targeted follow-up about that issue before moving on.
+- Do not ask the next planned case question if the candidate's most recent response contains an unresolved gap, ambiguity, unsafe assumption, or incomplete management step.
+- If the candidate answered the current prompt well, then advance to the next highest-yield phase of the case.
+- Avoid generic prompts such as "What is your management?" unless the case is just beginning.
+- Prefer specific follow-up questions that probe the exact missing or ambiguous element from the candidate's last response.
+- If multiple gaps are present, prioritize the single most clinically important issue and ask only about that.
+
 If NEW major errors are present:
 - Do not immediately terminate the case solely because a major error label was triggered.
 - First challenge the candidate to clarify, justify, or expand on the unsafe statement unless the response is unequivocally dangerous and exceeds the allowed major error threshold.
