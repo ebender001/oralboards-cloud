@@ -7,3 +7,4 @@ require('./src/utils');
 require('./src/scoring');
 require('./src/promptBuilder');
 require('./src/caseHandlers');
+require('./src/logPerformance.js');
