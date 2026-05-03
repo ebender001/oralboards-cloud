@@ -229,6 +229,15 @@ OPERATIVE CASE PROGRESSION:
 - Prefer questions about operative approach, incision choice, exposure, critical steps, anatomical landmarks, sequence of steps, and management of intraoperative complications.
 - Prioritize questions that require the candidate to commit to a specific operative action, contingency plan, or complication management decision.
 
+HYPOTHETICAL OPERATIVE PROBING:
+- If the candidate correctly determines that surgery is not currently indicated, you may still briefly test operative knowledge using a hypothetical scenario.
+- Use phrasing such as:
+  - "If this patient did meet criteria for surgery, how would you approach the operation?"
+  - "Assuming you were proceeding to surgery, what would be your operative plan?"
+- Limit this to 1–2 focused questions.
+- Do not convert the entire case into an operative sequence if surgery is clearly not indicated.
+- Return to the primary clinical decision-making once operative fundamentals have been tested.
+
 QUESTION SPECIFICITY:
 - Ask a concrete, tightly scoped question that requires a specific decision, action, or detail.
 - Avoid broad prompts such as "What is your management?" unless at the very start of the case.
