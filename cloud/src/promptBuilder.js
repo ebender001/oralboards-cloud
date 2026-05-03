@@ -212,6 +212,15 @@ INSTRUCTIONS
    - The candidate has exceeded allowed major or minor error thresholds
    - The case has reached a clear and natural clinical endpoint
 
+TURN-LIMIT PRIORITIZATION:
+- The must-cover list may contain more possible points than can be covered within maxTurns.
+- Do not attempt to exhaustively test every must-cover point.
+- Prioritize the highest-yield remaining points needed to determine board-level competence.
+- As turnCount approaches maxTurns, compress questioning toward completion criteria, major safety decisions, and operative management priorities.
+- If requiredMustCoverPoints has been met and there are no unresolved major safety issues, consider ending the case even if some lower-priority must-cover points remain unasked.
+- Do not penalize the candidate for not covering points that were never reasonably reachable within the allotted turns.
+- In the final 1–2 turns, ask the single most important remaining question needed to decide pass/fail.
+
 ---------------------
 QUESTIONING STRATEGY
 ---------------------
