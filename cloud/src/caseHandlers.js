@@ -12,6 +12,10 @@ Parse.Cloud.define("startOralCase", async (request) => {
   const normalizedSelectedSpecialty = typeof selectedSpecialty === "string"
     ? selectedSpecialty.trim()
     : selectedSpecialty;
+  const caseDomain = request.params.caseDomain || null;
+  const normalizedCaseDomain = typeof caseDomain === "string"
+    ? caseDomain.trim()
+    : caseDomain;
   const requiredMustCoverPoints = request.params.requiredMustCoverPoints;
   const allowedMajorErrors = request.params.allowedMajorErrors;
   const allowedMinorErrors = request.params.allowedMinorErrors;
@@ -22,13 +26,24 @@ Parse.Cloud.define("startOralCase", async (request) => {
   if (caseId) {
     caseSelectionSource = "caseId";
     const query = new Parse.Query("OralCase");
+    if (
+      typeof normalizedSelectedSpecialty === "string" &&
+      normalizedSelectedSpecialty.length > 0
+    ) {
+      query.equalTo("specialty", normalizedSelectedSpecialty);
+    }
+    if (normalizedCaseDomain) {
+      query.equalTo("caseDomain", normalizedCaseDomain);
+    }
     oralCase = await query.get(caseId, { useMasterKey: true });
 
     console.log("*****START ORAL CASE BY CASE ID:", {
       requestedCaseId: caseId,
       clientInstanceId,
       selectedSpecialty: normalizedSelectedSpecialty,
+      caseDomain: normalizedCaseDomain || "nil",
       caseSpecialty: oralCase.get("specialty"),
+      returnedCaseDomain: oralCase.get("caseDomain"),
       caseTitle: oralCase.get("title"),
     });
 
@@ -43,14 +58,22 @@ Parse.Cloud.define("startOralCase", async (request) => {
       );
     }
 
+    if (normalizedCaseDomain && oralCase.get("caseDomain") !== normalizedCaseDomain) {
+      throw new Parse.Error(
+        Parse.Error.INVALID_QUERY,
+        "Selected case does not match requested case domain"
+      );
+    }
+
     await recordServedCase(clientInstanceId, normalizedSelectedSpecialty || oralCase.get("specialty"), oralCase);
   } else {
     console.log("*****START ORAL CASE RANDOM:", {
       clientInstanceId,
       selectedSpecialty: normalizedSelectedSpecialty,
+      caseDomain: normalizedCaseDomain || "nil",
     });
     caseSelectionSource = "random";
-    oralCase = await getRandomCase(normalizedSelectedSpecialty, clientInstanceId);
+    oralCase = await getRandomCase(normalizedSelectedSpecialty, clientInstanceId, normalizedCaseDomain);
   }
 
   const caseSpecialty = oralCase.get("specialty");
@@ -61,6 +84,7 @@ Parse.Cloud.define("startOralCase", async (request) => {
   ) {
     console.error("*****START ORAL CASE SPECIALTY MISMATCH:", {
       requestedSpecialty: normalizedSelectedSpecialty,
+      requestedCaseDomain: normalizedCaseDomain || "nil",
       returnedCaseSpecialty: caseSpecialty,
       returnedCaseId: oralCase.get("caseId") || oralCase.id,
       returnedCaseTitle: oralCase.get("title"),
@@ -75,6 +99,7 @@ Parse.Cloud.define("startOralCase", async (request) => {
 
   console.log("*****START ORAL CASE SELECTED CASE:", {
     requestedSpecialty: normalizedSelectedSpecialty,
+    requestedCaseDomain: normalizedCaseDomain || "nil",
     clientInstanceId,
     returnedCaseSpecialty: caseSpecialty,
     returnedCaseId: oralCase.get("caseId") || oralCase.id,

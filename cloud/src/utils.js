@@ -59,7 +59,7 @@ async function recordServedCase(clientInstanceId, specialty, oralCase) {
   }
 }
 
-async function getRandomCase(specialty, clientInstanceId) {
+async function getRandomCase(specialty, clientInstanceId, caseDomain = null) {
   const query = new Parse.Query("OralCase");
   query.equalTo("isActive", true);
 
@@ -67,14 +67,21 @@ async function getRandomCase(specialty, clientInstanceId) {
     query.equalTo("specialty", specialty.trim());
   }
 
+  if (caseDomain) {
+    query.equalTo("caseDomain", caseDomain);
+  }
+
   console.log("*****SELECTED SPECIALTY:", typeof specialty === "string" ? specialty.trim() : specialty);
+  console.log("*****SELECTED CASE DOMAIN:", caseDomain || "nil");
 
   const cases = await query.find({ useMasterKey: true });
 
   if (!cases.length) {
     throw new Parse.Error(
       Parse.Error.OBJECT_NOT_FOUND,
-      specialty
+      specialty && caseDomain
+        ? `No active oral cases found for specialty: ${specialty} and caseDomain: ${caseDomain}`
+        : specialty
         ? `No active oral cases found for specialty: ${specialty}`
         : "No active oral cases found"
     );
