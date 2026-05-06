@@ -120,6 +120,10 @@ function isLowConfidenceResponse(text) {
   return false;
 }
 
+function safeStringArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
 Parse.Cloud.define("startOralCase", async (request) => {
   const caseId = request.params.caseId;
   const clientInstanceId = typeof request.params.clientInstanceId === "string"
@@ -215,6 +219,8 @@ Parse.Cloud.define("startOralCase", async (request) => {
   }
 
   console.log("*****START ORAL CASE SELECTED CASE:", {
+    operativeRequired: oralCase.get("operativeRequired") === true,
+    operativeTechniquePointCount: safeStringArray(oralCase.get("operativeTechniquePoints")).length,
     requestedSpecialty: normalizedSelectedSpecialty,
     requestedCaseDomain: normalizedCaseDomain || "nil",
     clientInstanceId,
@@ -223,6 +229,9 @@ Parse.Cloud.define("startOralCase", async (request) => {
     returnedCaseTitle: oralCase.get("title"),
     returnedCaseDomain: oralCase.get("caseDomain"),
   });
+
+  const operativeRequired = oralCase.get("operativeRequired") === true;
+  const operativeTechniquePoints = safeStringArray(oralCase.get("operativeTechniquePoints"));
 
   const session = new Parse.Object("OralExamSession");
   session.set("case", oralCase);
@@ -233,6 +242,8 @@ Parse.Cloud.define("startOralCase", async (request) => {
   session.set("majorErrors", []);
   session.set("minorErrors", []);
   session.set("completionReason", "");
+  session.set("operativeRequired", operativeRequired);
+  session.set("operativeTechniquePoints", operativeTechniquePoints);
 
   if (clientInstanceId) {
     session.set("clientInstanceId", clientInstanceId);
@@ -345,6 +356,10 @@ Parse.Cloud.define("submitOralResponse", async (request) => {
   const requiredMustCoverPoints = session.get("requiredMustCoverPoints") ?? (oralCase.get("mustCoverPoints") || []).length;
   const allowedMajorErrors = session.get("allowedMajorErrors") ?? 0;
   const allowedMinorErrors = session.get("allowedMinorErrors") ?? 2;
+  const operativeRequired = session.get("operativeRequired") === true || oralCase.get("operativeRequired") === true;
+  const operativeTechniquePoints = safeStringArray(
+    session.get("operativeTechniquePoints") || oralCase.get("operativeTechniquePoints") || []
+  );
   const scoringCatalog = buildScoringCatalog(oralCase);
 
   const prompt = buildPrompt({
@@ -360,7 +375,9 @@ Parse.Cloud.define("submitOralResponse", async (request) => {
       maxTurnsOverride: session.get("maxTurnsOverride"),
       requiredMustCoverPoints: session.get("requiredMustCoverPoints"),
       allowedMajorErrors: session.get("allowedMajorErrors"),
-      allowedMinorErrors: session.get("allowedMinorErrors")
+      allowedMinorErrors: session.get("allowedMinorErrors"),
+      operativeRequired,
+      operativeTechniquePoints
     }
   });
 
@@ -575,7 +592,7 @@ Parse.Cloud.define("submitOralResponse", async (request) => {
     finalCompletionReason = "minor_error_threshold_exceeded";
   }
 
-  if (!finalIsCaseComplete && hasEnoughCoveredPoints) {
+  if (!finalIsCaseComplete && hasEnoughCoveredPoints && !operativeRequired) {
     finalIsCaseComplete = true;
     finalCompletionReason = "required_key_points_covered";
   }

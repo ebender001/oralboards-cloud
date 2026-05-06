@@ -64,6 +64,13 @@ Candidate: ${turn.get("candidateResponse")}`;
   const turnCount = session.turnCount || priorTurns.length;
   const maxTurns = session.maxTurnsOverride || oralCase.get("maxTurns") || 6;
   const boardName = getBoardName(oralCase);
+  const operativeRequired = session.operativeRequired === true;
+  const operativeTechniquePoints = Array.isArray(session.operativeTechniquePoints)
+    ? session.operativeTechniquePoints
+    : [];
+  const formattedOperativeTechniquePoints = operativeTechniquePoints.length
+    ? operativeTechniquePoints.map((point) => `- ${point}`).join("\n")
+    : "None specified.";
 
   const requiredMustCoverPoints = session.requiredMustCoverPoints ?? (oralCase.get("mustCoverPoints") || []).length;
   const allowedMajorErrors = session.allowedMajorErrors ?? 0;
@@ -124,6 +131,11 @@ ${minorErrors || "None"}
 
 Completion criteria:
 ${completionCriteria || "None"}
+
+Operative technique required: ${operativeRequired ? "Yes" : "No"}
+
+Operative technique points:
+${formattedOperativeTechniquePoints}
 
 ---------------------
 CURRENT STATE
@@ -203,6 +215,11 @@ INSTRUCTIONS
    - The candidate has met the completion criteria
    - The candidate has exceeded allowed major or minor error thresholds
    - The case has reached a clear and natural clinical endpoint
+15. If operative technique required is Yes, you must ask at least one concrete operative technique question before completing the case.
+15a. If operative technique points are present, preferentially ask about one of those listed points.
+15b. A valid operative technique question must require the candidate to explain how they would perform a specific operative maneuver, exposure, reconstruction step, intraoperative assessment, or bailout decision.
+15c. Do not mark the case complete solely because diagnosis, indication, or general operative plan has been discussed.
+15d. If operative technique required is Yes and no technical operative point has been tested, is_case_complete must be false unless maxTurns is reached or there is a major safety failure.
 
 TURN-LIMIT PRIORITIZATION:
 - The must-cover list may contain more possible points than can be covered within maxTurns.
