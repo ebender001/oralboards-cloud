@@ -3,6 +3,123 @@ const { requireString, getRandomCase, recordServedCase, getSessionWithCase, getT
 const { buildScoringCatalog, normalizeModelItems, detectConceptMentions } = require('./scoring');
 const { buildPrompt } = require('./promptBuilder');
 
+const SHORT_CLINICAL_TERMS = new Set([
+  "abg",
+  "aaa",
+  "airway",
+  "antibiotics",
+  "blood",
+  "bp",
+  "cbc",
+  "cpr",
+  "ct",
+  "dvt",
+  "ecmo",
+  "ekg",
+  "exam",
+  "fluids",
+  "iv",
+  "labs",
+  "mi",
+  "mri",
+  "npo",
+  "o2",
+  "or",
+  "oxygen",
+  "pe",
+  "resuscitate",
+  "rsi",
+  "scan",
+  "stable",
+  "stabilize",
+  "trauma",
+  "tube",
+  "xray"
+]);
+
+const KEYBOARD_GIBBERISH_PATTERNS = [
+  "asdf",
+  "asdfasdf",
+  "qwer",
+  "qwerty",
+  "zxcv",
+  "hjkl",
+  "wasd"
+];
+
+function hasClinicalSignal(text) {
+  const words = text.match(/[a-z0-9]+/g) || [];
+  return words.some((word) => SHORT_CLINICAL_TERMS.has(word));
+}
+
+function isLowConfidenceResponse(text) {
+  if (typeof text !== "string") {
+    return true;
+  }
+
+  const normalized = text.trim().toLowerCase().replace(/\s+/g, " ");
+  if (!normalized) {
+    return true;
+  }
+
+  const compact = normalized.replace(/\s+/g, "");
+  const alphaCount = (compact.match(/[a-z]/g) || []).length;
+  const symbolOrNumberCount = (compact.match(/[^a-z]/g) || []).length;
+  const alphaRatio = compact.length > 0 ? alphaCount / compact.length : 0;
+  const symbolOrNumberRatio = compact.length > 0 ? symbolOrNumberCount / compact.length : 0;
+
+  if (compact.length >= 4 && /^(.)(\1)+$/.test(compact)) {
+    return true;
+  }
+
+  if (compact.length >= 3 && alphaRatio < 0.25) {
+    return true;
+  }
+
+  if (compact.length >= 3 && symbolOrNumberRatio > 0.7 && !hasClinicalSignal(normalized)) {
+    return true;
+  }
+
+  if (KEYBOARD_GIBBERISH_PATTERNS.includes(compact)) {
+    return true;
+  }
+
+  if (
+    KEYBOARD_GIBBERISH_PATTERNS.some((pattern) => (
+      compact.length >= pattern.length * 2 &&
+      compact === pattern.repeat(Math.floor(compact.length / pattern.length))
+    ))
+  ) {
+    return true;
+  }
+
+  const repeatedChunk = compact.match(/^([a-z]{2,6})\1+$/);
+  if (repeatedChunk && !SHORT_CLINICAL_TERMS.has(repeatedChunk[1])) {
+    return true;
+  }
+
+  const words = normalized.match(/[a-z0-9]+/g) || [];
+  const uniqueWords = new Set(words);
+  if (
+    words.length >= 2 &&
+    uniqueWords.size === 1 &&
+    compact.length >= 6 &&
+    !hasClinicalSignal(normalized)
+  ) {
+    return true;
+  }
+
+  if (
+    words.length === 1 &&
+    compact.length <= 4 &&
+    !hasClinicalSignal(normalized)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 Parse.Cloud.define("startOralCase", async (request) => {
   const caseId = request.params.caseId;
   const clientInstanceId = typeof request.params.clientInstanceId === "string"
@@ -153,11 +270,82 @@ Parse.Cloud.define("startOralCase", async (request) => {
 Parse.Cloud.define("submitOralResponse", async (request) => {
   const sessionId = requireString(request.params, "sessionId");
   const responseText = requireString(request.params, "responseText");
+  const responseQuality = isLowConfidenceResponse(responseText) ? "low_confidence" : null;
 
   const session = await getSessionWithCase(sessionId);
   const oralCase = session.get("case");
   const priorTurns = await getTurns(session);
   const currentExaminerPrompt = session.get("currentExaminerPrompt");
+
+  console.log("submitOralResponse sessionId:", sessionId);
+  console.log("submitOralResponse turnCount:", priorTurns.length);
+  console.log("submitOralResponse currentExaminerPrompt:", currentExaminerPrompt);
+  console.log("submitOralResponse candidateResponse:", responseText);
+  console.log("submitOralResponse responseQuality:", responseQuality || "normal");
+  const maxTurns = session.get("maxTurnsOverride") || oralCase.get("maxTurns") || 6;
+  const reachedMaxTurns = priorTurns.length + 1 >= maxTurns;
+  console.log("submitOralResponse maxTurns:", maxTurns);
+
+  if (responseQuality === "low_confidence") {
+    const nextExaminerPrompt = "I'm not sure I understood your response. Please walk me through your assessment and management plan.";
+    const briefEvaluation = "The response could not be interpreted as clinical reasoning.";
+    const pointEvidence = [];
+    const majorErrorEvidence = [];
+    const minorErrorEvidence = [];
+    const missedConcepts = [];
+    const examinerWasLookingFor = [];
+    const coveredPoints = session.get("coveredPoints") || [];
+    const majorErrors = session.get("majorErrors") || [];
+    const minorErrors = session.get("minorErrors") || [];
+    const completionReason = session.get("completionReason") || "";
+
+    const turn = new Parse.Object("OralExamTurn");
+    turn.set("session", session);
+    turn.set("turnIndex", priorTurns.length);
+    turn.set("examinerPrompt", currentExaminerPrompt);
+    turn.set("candidateResponse", responseText);
+    turn.set("nextExaminerPrompt", nextExaminerPrompt);
+    turn.set("aiSummary", briefEvaluation);
+    turn.set("newlyCoveredPoints", []);
+    turn.set("newMajorErrors", []);
+    turn.set("newMinorErrors", []);
+    turn.set("pointEvidence", pointEvidence);
+    turn.set("majorErrorEvidence", majorErrorEvidence);
+    turn.set("minorErrorEvidence", minorErrorEvidence);
+    turn.set("missedConcepts", missedConcepts);
+    turn.set("examinerWasLookingFor", examinerWasLookingFor);
+    turn.set("completionReason", "");
+    turn.set("responseQuality", responseQuality);
+    await turn.save(null, { useMasterKey: true });
+
+    session.set("currentExaminerPrompt", nextExaminerPrompt);
+    session.set("turnCount", priorTurns.length + 1);
+    session.set("completionReason", completionReason);
+
+    await session.save(null, { useMasterKey: true });
+
+    return {
+      nextExaminerPrompt,
+      briefEvaluation,
+      pointEvidence,
+      majorErrorEvidence,
+      minorErrorEvidence,
+      missedConcepts,
+      examinerWasLookingFor,
+      isCaseComplete: false,
+      completionReason,
+      coveredPoints,
+      majorErrors,
+      minorErrors,
+      maxTurns,
+      responseQuality
+    };
+  }
+
+  const requiredMustCoverPoints = session.get("requiredMustCoverPoints") ?? (oralCase.get("mustCoverPoints") || []).length;
+  const allowedMajorErrors = session.get("allowedMajorErrors") ?? 0;
+  const allowedMinorErrors = session.get("allowedMinorErrors") ?? 2;
+  const scoringCatalog = buildScoringCatalog(oralCase);
 
   const prompt = buildPrompt({
     oralCase,
@@ -175,19 +363,6 @@ Parse.Cloud.define("submitOralResponse", async (request) => {
       allowedMinorErrors: session.get("allowedMinorErrors")
     }
   });
-
-  console.log("submitOralResponse sessionId:", sessionId);
-  console.log("submitOralResponse turnCount:", priorTurns.length);
-  console.log("submitOralResponse currentExaminerPrompt:", currentExaminerPrompt);
-  console.log("submitOralResponse candidateResponse:", responseText);
-  const maxTurns = session.get("maxTurnsOverride") || oralCase.get("maxTurns") || 6;
-  const reachedMaxTurns = priorTurns.length + 1 >= maxTurns;
-  console.log("submitOralResponse maxTurns:", maxTurns);
-
-  const requiredMustCoverPoints = session.get("requiredMustCoverPoints") ?? (oralCase.get("mustCoverPoints") || []).length;
-  const allowedMajorErrors = session.get("allowedMajorErrors") ?? 0;
-  const allowedMinorErrors = session.get("allowedMinorErrors") ?? 2;
-  const scoringCatalog = buildScoringCatalog(oralCase);
 
   const response = await openai.responses.create({
     model: OPENAI_MODEL,
