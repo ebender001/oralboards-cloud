@@ -64,10 +64,24 @@ Candidate: ${turn.get("candidateResponse")}`;
   const turnCount = session.turnCount || priorTurns.length;
   const maxTurns = session.maxTurnsOverride || oralCase.get("maxTurns") || 6;
   const boardName = getBoardName(oralCase);
-  const operativeRequired = session.operativeRequired === true;
-  const operativeTechniquePoints = Array.isArray(session.operativeTechniquePoints)
-    ? session.operativeTechniquePoints
-    : [];
+  const operativeRequired =
+    oralCase.get("operativeRequired") === true ||
+    session.operativeRequired === true;
+
+  const operativeTechniquePointsFromCase =
+    oralCase.get("operativeTechniquePoints") || [];
+
+  const operativeTechniquePointsFromSession =
+    session.operativeTechniquePoints || [];
+
+  const operativeTechniquePoints =
+    Array.isArray(operativeTechniquePointsFromSession) &&
+    operativeTechniquePointsFromSession.length
+      ? operativeTechniquePointsFromSession
+      : Array.isArray(operativeTechniquePointsFromCase)
+        ? operativeTechniquePointsFromCase
+        : [];
+
   const formattedOperativeTechniquePoints = operativeTechniquePoints.length
     ? operativeTechniquePoints.map((point) => `- ${point}`).join("\n")
     : "None specified.";
@@ -215,11 +229,12 @@ INSTRUCTIONS
    - The candidate has met the completion criteria
    - The candidate has exceeded allowed major or minor error thresholds
    - The case has reached a clear and natural clinical endpoint
-15. If operative technique required is Yes, you must ask at least one concrete operative technique question before completing the case.
-15a. If operative technique points are present, preferentially ask about one of those listed points.
-15b. A valid operative technique question must require the candidate to explain how they would perform a specific operative maneuver, exposure, reconstruction step, intraoperative assessment, or bailout decision.
-15c. Do not mark the case complete solely because diagnosis, indication, or general operative plan has been discussed.
-15d. If operative technique required is Yes and no technical operative point has been tested, is_case_complete must be false unless maxTurns is reached or there is a major safety failure.
+15. OPERATIVE TECHNIQUE GATE:
+   - If operative technique required is Yes, the case must test intraoperative technique before completion.
+   - Prefer the listed operative technique points over generic operative questions.
+   - A valid technique question asks HOW the candidate performs a maneuver, exposure, reconstruction, intraoperative test, or bailout.
+   - Diagnosis, indication, consent, antibiotics, imaging, ICU care, and broad management plans do not satisfy this requirement.
+   - If no operative technique point has been tested, is_case_complete must be false unless maxTurns is reached or a major safety failure ends the case.
 
 TURN-LIMIT PRIORITIZATION:
 - The must-cover list may contain more possible points than can be covered within maxTurns.
@@ -239,94 +254,34 @@ GENERAL FLOW GUIDANCE:
 - High-value questions should test clinical judgment rather than broad medical knowledge once the main problem is established.
 
 OPERATIVE CASE PROGRESSION:
-- If the case clearly requires surgery, do not remain in diagnostic questioning longer than necessary.
-- Once the diagnosis, operative indication, or need for surgery is reasonably established, transition to operative management without additional confirmatory questioning unless a critical instability or contraindication must be addressed first.
-- Limit preoperative questioning to the key decisions needed for safe operative management.
-- Aggressively probe detailed operative execution once surgery is established.
-- Require the candidate to describe exact technical steps, operative sequencing, reconstruction methods, testing maneuvers, and bailout strategies.
-- Do not remain at the level of broad operative plans.
-- Prefer questions about operative approach, incision choice, exposure, critical steps, anatomical landmarks, sequence of steps, and management of intraoperative complications.
-- Prioritize questions that require the candidate to commit to a specific operative action, contingency plan, or complication management decision.
+- Do not remain in diagnostic or preoperative management once the operative need is established.
+- Move promptly to operative execution unless an immediate instability must be addressed first.
+- If operativeTechniquePoints are present, use them as the preferred roadmap for technical questioning.
+- Keep each operative question narrow, concrete, and response-driven.
 
 ---------------------
-OPERATIVE TECHNIQUE DEPTH
+OPERATIVE TECHNIQUE MODE
 ---------------------
-- In operative cases, do not stop at the decision to operate.
-- Once operative management is established, actively test detailed technical execution.
-- Require the candidate to describe HOW they would perform the operation, not merely WHICH operation they would choose.
-- Prefer questions that probe:
-  - exposure and setup
-  - cannulation strategy
-  - myocardial protection
-  - incision choice
-  - valve exposure
-  - sequence of operative steps
-  - suture placement
-  - reconstruction technique
-  - graft configuration
-  - patch orientation
-  - sizing decisions
-  - device selection
-  - conduit choice
-  - repair strategy
-  - methods of intraoperative assessment
-  - bailout strategies
-  - management of technical failure
-  - intraoperative troubleshooting
-  - criteria for conversion from repair to replacement
-  - management of residual pathology after repair
+Use this mode whenever operative technique required is Yes, or when the candidate has reached an operative phase.
 
-- For valve repair cases, specifically probe:
-  - leaflet analysis
-  - lesion localization
-  - annuloplasty strategy
-  - neochord placement technique
-  - chordal length adjustment
-  - resection versus respect strategy
-  - saline testing
-  - intraoperative TEE interpretation
-  - management of SAM
-  - indications to revise the repair
+Focus on intraoperative execution only:
+- exposure and setup
+- incision or access
+- cannulation and myocardial protection when relevant
+- dissection planes and anatomic landmarks
+- sequence of technical steps
+- suture, staple, patch, graft, conduit, or device technique
+- reconstruction and repair details
+- intraoperative testing and interpretation
+- technical failure, conversion, or bailout strategy
 
-- For coronary surgery cases, specifically probe:
-  - conduit selection
-  - target quality assessment
-  - proximal and distal anastomotic technique
-  - sequence of grafting
-  - myocardial protection strategy
-  - management of calcified aorta
-  - competitive flow
-  - graft revision strategy
+Avoid broad prompts. Ask questions such as:
+- "Walk me through that operation step by step."
+- "Describe exactly how you perform that repair."
+- "How do you test the repair intraoperatively?"
+- "What would make you revise or abandon that repair?"
 
-- For thoracic cases, specifically probe:
-  - exposure
-  - hilar dissection
-  - vascular control
-  - airway division and reconstruction
-  - nodal dissection technique
-  - management of intraoperative bleeding
-  - leak testing
-  - bronchial stump management
-
-- The examiner should routinely ask:
-  - "Describe exactly how you would do that."
-  - "Walk me through the operation step-by-step."
-  - "How specifically would you perform that repair?"
-  - "How do you test the repair intraoperatively?"
-  - "What would make you revise the repair?"
-  - "What is your bailout strategy if that fails?"
-
-- Strong candidates should be forced to commit to exact operative techniques and intraoperative decisions.
-- Avoid remaining at a high-level management discussion once the case has entered the operative phase.
-
-HYPOTHETICAL OPERATIVE PROBING:
-- If the candidate correctly determines that surgery is not currently indicated, you may still briefly test operative knowledge using a hypothetical scenario.
-- Use phrasing such as:
-  - "If this patient did meet criteria for surgery, how would you approach the operation?"
-  - "Assuming you were proceeding to surgery, what would be your operative plan?"
-- Limit this to 1–2 focused questions.
-- Do not convert the entire case into an operative sequence if surgery is clearly not indicated.
-- Return to the primary clinical decision-making once operative fundamentals have been tested.
+If operativeTechniquePoints are present, choose the highest-yield untested point that follows logically from the candidate’s last answer. Do not ask more than one technical point per turn.
 
 QUESTION SPECIFICITY:
 - Ask a concrete, tightly scoped question that requires a specific decision, action, or detail.
@@ -451,6 +406,7 @@ FINAL VALIDATION BEFORE RETURNING JSON
 - On the first substantive response, prefer a clarifying follow-up over immediate failure when the candidate recognizes the clinical emergency but provides an incomplete sequence.
   - For acute deterioration scenarios, do not return multiple overlapping “failure to recognize” and “failure to act” errors unless the candidate clearly failed both concepts in their actual response.
 - If next_examiner_prompt is non-empty, is_case_complete MUST be false.
+- If operative technique required is Yes and the conversation has not tested a listed operativeTechniquePoint or equivalent intraoperative maneuver, do not complete the case unless maxTurns is reached or a major safety failure ends the case.
 - Do not terminate the case if a reasonable follow-up question exists.
 - Incomplete but clinically reasonable responses should lead to further questioning, not case termination.
 - Do not carry forward a major error if the candidate later explicitly corrects or appropriately addresses the issue.
