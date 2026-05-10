@@ -58,6 +58,42 @@ Candidate: ${turn.get("candidateResponse")}`;
   const minorErrors = (oralCase.get("criticalErrorsMinor") || []).join("\n");
   const completionCriteria = (oralCase.get("completionCriteria") || []).join("\n");
 
+    const caseProgressionPointsArray =
+    oralCase.get("caseProgressionPoints") || [];
+
+  const decisionForksArray =
+    oralCase.get("decisionForks") || [];
+
+  const complicationTriggersArray =
+    oralCase.get("complicationTriggers") || [];
+
+  const examinerChallengePointsArray =
+    oralCase.get("examinerChallengePoints") || [];
+
+  const formattedCaseProgressionPoints =
+    Array.isArray(caseProgressionPointsArray) &&
+    caseProgressionPointsArray.length
+      ? caseProgressionPointsArray.map((point) => `- ${point}`).join("\n")
+      : "None specified.";
+
+  const formattedDecisionForks =
+    Array.isArray(decisionForksArray) &&
+    decisionForksArray.length
+      ? decisionForksArray.map((point) => `- ${point}`).join("\n")
+      : "None specified.";
+
+  const formattedComplicationTriggers =
+    Array.isArray(complicationTriggersArray) &&
+    complicationTriggersArray.length
+      ? complicationTriggersArray.map((point) => `- ${point}`).join("\n")
+      : "None specified.";
+
+  const formattedExaminerChallengePoints =
+    Array.isArray(examinerChallengePointsArray) &&
+    examinerChallengePointsArray.length
+      ? examinerChallengePointsArray.map((point) => `- ${point}`).join("\n")
+      : "None specified.";
+
   const coveredPoints = (session.coveredPoints || []).join("\n");
   const accumulatedMajor = (session.majorErrors || []).join("\n");
   const accumulatedMinor = (session.minorErrors || []).join("\n");
@@ -151,6 +187,18 @@ Operative technique required: ${operativeRequired ? "Yes" : "No"}
 Operative technique points:
 ${formattedOperativeTechniquePoints}
 
+Case progression points:
+${formattedCaseProgressionPoints}
+
+Decision forks:
+${formattedDecisionForks}
+
+Complication triggers:
+${formattedComplicationTriggers}
+
+Examiner challenge points:
+${formattedExaminerChallengePoints}
+
 ---------------------
 CURRENT STATE
 ---------------------
@@ -229,7 +277,19 @@ INSTRUCTIONS
    - The candidate has met the completion criteria
    - The candidate has exceeded allowed major or minor error thresholds
    - The case has reached a clear and natural clinical endpoint
-15. OPERATIVE TECHNIQUE GATE:
+15. CASE COMPLEXITY AND EVOLUTION:
+   - The case should evolve dynamically over time rather than remaining a static diagnosis-and-treatment discussion.
+   - Use caseProgressionPoints to introduce additional findings, physiologic deterioration, imaging results, operative findings, or postoperative developments as the case progresses.
+   - Use decisionForks to force the candidate to choose between competing management strategies, operative approaches, timing decisions, or bailout plans.
+   - Use complicationTriggers to introduce intraoperative complications, postoperative complications, clinical deterioration, or failed management pathways.
+   - Use examinerChallengePoints to pressure vague, incomplete, unsafe, or superficial answers and force specificity.
+   - Do NOT introduce all progression points or complications at once.
+   - Allow the candidate time to respond and adapt before escalating further.
+   - Prefer progression points and complications that logically follow the candidate’s previous decisions or omissions.
+   - If these arrays are empty, continue the case naturally using the stem, must-cover points, operative technique points, and candidate responses alone.
+   - Do not force complications artificially if the case is progressing appropriately without them.
+   - Avoid ending the case immediately after diagnosis or initial management if there are still meaningful opportunities to test operative judgment, prioritization, adaptation, rescue strategies, or complication management.
+16. OPERATIVE TECHNIQUE GATE:
    - If operative technique required is Yes, the case must test intraoperative technique before completion.
    - Prefer the listed operative technique points over generic operative questions.
    - A valid technique question asks HOW the candidate performs a maneuver, exposure, reconstruction, intraoperative test, or bailout.
@@ -309,6 +369,14 @@ FORWARD PROGRESSION:
 - Do not remain on the same topic for more than 1–2 turns unless there is a critical safety issue.
 - Once a concept is adequately demonstrated, move on.
 - Avoid repetitive questioning of already demonstrated knowledge.
+
+CASE ESCALATION:
+- Once the candidate demonstrates a reasonable initial management plan, consider advancing the case using caseProgressionPoints, decisionForks, or complicationTriggers.
+- Escalation should feel clinically natural and should follow the timeline of the case.
+- Do not introduce unrelated complications or random deterioration.
+- Prefer escalation that tests judgment, prioritization, operative adaptability, rescue strategy, or postoperative management.
+- If examinerChallengePoints are present, use them to challenge vague or superficial answers with direct follow-up questions.
+- Do not repeatedly escalate complexity every turn; allow stabilization and response before introducing another development.
 
 ERROR CHALLENGE STYLE:
 - When challenging an unsafe or incorrect statement, ask the question in a direct, firm, professional tone.
@@ -407,6 +475,8 @@ FINAL VALIDATION BEFORE RETURNING JSON
   - For acute deterioration scenarios, do not return multiple overlapping “failure to recognize” and “failure to act” errors unless the candidate clearly failed both concepts in their actual response.
 - If next_examiner_prompt is non-empty, is_case_complete MUST be false.
 - If operative technique required is Yes and the conversation has not tested a listed operativeTechniquePoint or equivalent intraoperative maneuver, do not complete the case unless maxTurns is reached or a major safety failure ends the case.
+- If caseProgressionPoints, decisionForks, or complicationTriggers are present, strongly prefer testing at least one evolving scenario element before case completion unless maxTurns is reached or the case ends due to major safety failure.
+- Do not terminate the case immediately after a correct diagnosis or initial management step if meaningful complexity escalation remains available.
 - Do not terminate the case if a reasonable follow-up question exists.
 - Incomplete but clinically reasonable responses should lead to further questioning, not case termination.
 - Do not carry forward a major error if the candidate later explicitly corrects or appropriately addresses the issue.
