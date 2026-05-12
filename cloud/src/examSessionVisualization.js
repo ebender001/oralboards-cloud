@@ -625,7 +625,7 @@ function getVisualizationHTML() {
     </script>
 </body>
 </html>
-  \`;
+  `;
 }
 
 module.exports = {
