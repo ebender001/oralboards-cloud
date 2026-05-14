@@ -271,13 +271,11 @@ INSTRUCTIONS
 2a. Do not mark an error if the candidate explicitly stated the needed action, monitoring step, or corrective intervention.
 2b. Before returning any error, check whether the candidate said the opposite of that error.
 2c. If the candidate's wording is clinically accurate and consistent with standard medical terminology, count it as correct even if phrasing differs.
-2d. Do NOT assign a major error solely because a required step has not yet been stated if the candidate is progressing through a reasonable clinical sequence.
-2e. Recognize that management often occurs in steps; absence of a downstream step does not constitute a major error if the candidate has not yet been specifically prompted for it.
-2f. Only assign a major error for omission if the candidate had a clear opportunity to address that step and failed to do so after appropriate probing.
-2g. Do NOT assign a major or minor error for failure to mention a management issue that belongs to a later phase of the case if the examiner has not yet advanced to that phase.
-2h. If the candidate correctly answers the question asked, do NOT penalize the candidate for not anticipating future examiner questions.
-2i. A missing point becomes an omission error only after the case has progressed past the point where it should reasonably have been addressed, or after the examiner has specifically probed that issue and the candidate still fails to address it.
-2j. Do NOT mark an error merely because subsequent planned questioning will touch on that same issue.
+2d. Do NOT assign omission-based errors prematurely.
+- Clinical management occurs sequentially.
+- Do not penalize downstream steps that have not yet been reached or specifically probed.
+- Only assign omission errors after the candidate had a reasonable opportunity to address the issue and still failed to do so.
+- If the candidate correctly answers the current question, do not penalize failure to anticipate future questions.
 3. For every item you place in newly_covered_points, new_major_errors, or new_minor_errors, there must be direct supporting evidence in the candidate response from THIS turn.
 3a. If there is no direct support in THIS response, do not include the item.
 3b. Do NOT invent unsupported concepts, but do allow reasonable clinical interpretation of abbreviated, telegraphic, or ESL-style phrasing when the intended meaning is clinically apparent.
@@ -517,27 +515,16 @@ Example style only; do not copy unless it applies to this case:
 ---------------------
 FINAL VALIDATION BEFORE RETURNING JSON
 ---------------------
-- Normalize terminology mentally before judging correctness (synonyms, abbreviations, phrasing).
-- Do not return an error label if the candidate explicitly performed or stated the corrective action.
-- Do not miss a covered point just because the wording differs from the canonical label.
-- Do not use prior turns as evidence for newly_covered_points or new errors in this turn.
-- If uncertain between correct concept recognition and an error, prefer the interpretation most faithful to the candidate's actual words.
-- On the first substantive response, prefer a clarifying follow-up over immediate failure when the candidate recognizes the clinical emergency but provides an incomplete sequence.
-  - For acute deterioration scenarios, do not return multiple overlapping “failure to recognize” and “failure to act” errors unless the candidate clearly failed both concepts in their actual response.
-- If next_examiner_prompt is non-empty, is_case_complete MUST be false.
-- If operative technique required is Yes and the conversation has not tested a listed operativeTechniquePoint or equivalent intraoperative maneuver, do not complete the case unless maxTurns is reached or a major safety failure ends the case.
-- If caseProgressionPoints, decisionForks, or complicationTriggers are present, strongly prefer testing at least one evolving scenario element before case completion unless maxTurns is reached or the case ends due to major safety failure.
-- Do not terminate the case immediately after a correct diagnosis or initial management step if meaningful complexity escalation remains available.
-- Do not terminate the case if a reasonable follow-up question exists.
-- Incomplete but clinically reasonable responses should lead to further questioning, not case termination.
-- Do not carry forward a major error if the candidate later explicitly corrects or appropriately addresses the issue.
-- Sequential clinical reasoning should not be penalized as a failure if the correct action is ultimately performed.
-- Do not penalize the candidate for failing to mention a future management issue before the examiner has asked about or advanced to that phase.
-- If the candidate answered the current examiner prompt correctly, continue the case rather than assigning an anticipatory omission error.
-- Only count an omission once the conversation has clearly moved beyond the expected timing for that issue.
-- If new_major_errors or new_minor_errors are non-empty, missed_concepts and examiner_was_looking_for must each include matching objects for every returned error label.
-- If there are no new errors, missed_concepts and examiner_was_looking_for must both be empty arrays.
-- Do not create missed concepts or examiner explanations for issues that are not listed as NEW errors in THIS turn.
+Before returning JSON, verify:
+
+- Interpret the candidate fairly using clinical context, accepted abbreviations, dictation tolerance, and ESL/telegraphic phrasing.
+- Use only THIS turn as evidence for newly_covered_points and new errors.
+- Return only canonical labels from the provided lists.
+- Do not assign omission errors for future topics, unasked phases, or sequential steps that remain reasonably reachable.
+- If the candidate is incomplete but clinically reasonable, ask one focused follow-up instead of ending the case.
+- If operative technique is required and not yet tested, do not complete the case unless maxTurns is reached or a major safety failure ends the case.
+- If next_examiner_prompt is non-empty, is_case_complete must be false.
+- If new errors are returned, missed_concepts and examiner_was_looking_for must match them exactly; otherwise both must be empty arrays.
 `;
 }
 
