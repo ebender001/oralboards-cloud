@@ -1,4 +1,6 @@
 // This function builds the prompt for the examiner agent based on the oral case, current conversation state, and prior turns. It includes detailed instructions for how the examiner should evaluate the candidate's response and determine the next question to ask.
+const PROMPT_VERSION = 1;
+
 const SPECIALTY_BOARD_NAMES = {
   "general surgery": "American Board of Surgery",
   surgery: "American Board of Surgery",
@@ -452,6 +454,25 @@ If no new errors are present:
 - Prefer questions that test the highest-yield remaining must-cover points or completion criteria.
 
 ---------------------
+PROMPT SELF-DIAGNOSTICS
+---------------------
+After generating the examiner response, assess whether the prompt instructions may have caused any of the following:
+- overly repetitive questioning
+- failure to recognize terse but clinically meaningful answers
+- unfair penalization of sequential reasoning
+- premature case completion
+- failure to advance to operative technique when operativeRequired is true
+- failure to use case progression points
+- excessive generic prompting
+
+Return prompt_diagnostic with:
+- likely_prompt_issue: true or false
+- issue_type: one short label, or "none"
+- suggested_prompt_adjustment: one concise sentence, or "none"
+
+This field is for developer review only. It must not affect scoring, case completion, or the candidate-facing examiner prompt.
+
+---------------------
 OUTPUT FORMAT (STRICT JSON)
 ---------------------
 Return JSON with EXACT keys:
@@ -466,6 +487,7 @@ Return JSON with EXACT keys:
 - minor_error_evidence (array of objects with keys: label, evidence)
 - missed_concepts (array of objects with keys: label, severity, missed_concept)
 - examiner_was_looking_for (array of objects with keys: label, severity, explanation)
+- prompt_diagnostic (object with keys: likely_prompt_issue, issue_type, suggested_prompt_adjustment)
 - is_case_complete (boolean)
 - completion_reason (string)
 
@@ -521,4 +543,5 @@ FINAL VALIDATION BEFORE RETURNING JSON
 
 module.exports = {
   buildPrompt,
+  PROMPT_VERSION,
 };

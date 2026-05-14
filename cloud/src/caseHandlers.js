@@ -1,7 +1,8 @@
 const { openai, OPENAI_MODEL } = require('./config');
 const { requireString, getRandomCase, recordServedCase, getSessionWithCase, getTurns, deleteTurnsForSession, mergeUnique } = require('./utils');
 const { buildScoringCatalog, normalizeModelItems, detectConceptMentions } = require('./scoring');
-const { buildPrompt } = require('./promptBuilder');
+const { buildPrompt, PROMPT_VERSION } = require('./promptBuilder');
+const { savePromptDiagnostic } = require('./promptDiagnostics');
 
 const SHORT_CLINICAL_TERMS = new Set([
   "abg",
@@ -470,6 +471,20 @@ Parse.Cloud.define("submitOralResponse", async (request) => {
                 required: ["label", "severity", "explanation"]
               }
             },
+            prompt_diagnostic: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                likely_prompt_issue: { type: "boolean" },
+                issue_type: { type: "string" },
+                suggested_prompt_adjustment: { type: "string" }
+              },
+              required: [
+                "likely_prompt_issue",
+                "issue_type",
+                "suggested_prompt_adjustment"
+              ]
+            },
             is_case_complete: { type: "boolean" },
             completion_reason: { type: "string" }
           },
@@ -484,6 +499,7 @@ Parse.Cloud.define("submitOralResponse", async (request) => {
             "minor_error_evidence",
             "missed_concepts",
             "examiner_was_looking_for",
+            "prompt_diagnostic",
             "is_case_complete",
             "completion_reason"
           ]
@@ -574,6 +590,18 @@ Parse.Cloud.define("submitOralResponse", async (request) => {
   turn.set("examinerWasLookingFor", examinerWasLookingFor);
   turn.set("completionReason", parsed.completion_reason || "");
   await turn.save(null, { useMasterKey: true });
+
+  await savePromptDiagnostic({
+    session,
+    oralCase,
+    turnIndex: priorTurns.length,
+    candidateResponse: responseText,
+    examinerPrompt: currentExaminerPrompt,
+    nextExaminerPrompt: parsed.next_examiner_prompt,
+    briefEvaluation: parsed.brief_evaluation,
+    promptDiagnostic: parsed.prompt_diagnostic,
+    promptVersion: PROMPT_VERSION
+  });
 
   session.set("coveredPoints", coveredPoints);
   session.set("majorErrors", majorErrors);
