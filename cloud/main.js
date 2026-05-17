@@ -1,6 +1,7 @@
 // Refactored oralBoards.js - Main entry point for Parse Cloud Code
 //test push
 require("./src/admin/createOralCase");
+require("./src/admin/institutions");
 require("./src/oralBoards_debrief.js");
 require('./src/config');
 require('./src/utils');
