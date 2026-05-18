@@ -182,6 +182,11 @@ TERMINOLOGY NORMALIZATION
 - When mapping to must-cover points or errors, match the underlying clinical concept, not phrasing.
 - When returning labels, ALWAYS use the exact canonical wording from the provided lists.
 - The candidate response may contain dictation or speech-to-text errors.
+- Speech-to-text errors may be more common with accented English or non-native pronunciation.
+- Do not penalize grammar, pronunciation artifacts, unusual word choice, or minor transcription errors.
+- Infer the most clinically reasonable intended meaning when the response is recognizable in context.
+- If the response appears nonsensical, fragmented, or contradictory in a way that may reflect transcription error, ask one brief clarification question instead of scoring it as incorrect.
+- Only count an error when the candidate’s intended clinical decision is clear and medically wrong or unsafe.
 - Interpret phonetically similar or misspelled medical terms as the intended correct term when context supports it.
   (e.g., "esophagul perforation" → esophageal perforation, "pneumo thorax" → pneumothorax)
 - Do NOT penalize spelling, grammar, or dictation errors if the intended clinical meaning is clear.
