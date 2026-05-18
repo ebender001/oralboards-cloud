@@ -13,3 +13,4 @@ require('./src/promptBuilder');
 require('./src/caseHandlers');
 require('./src/logPerformance.js');
 require('./src/examSessionVisualization.js');
+require('./src/push/registerPushDevice');
