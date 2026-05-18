@@ -48,12 +48,12 @@ function validatePlatform(platform) {
   return platform;
 }
 
-function validateNotificationsEnabled(notificationsEnabled) {
-  if (typeof notificationsEnabled !== "boolean") {
-    throw parseValidationError("notificationsEnabled must be a boolean");
+function validateNotificationEnabled(notificationEnabled) {
+  if (typeof notificationEnabled !== "boolean") {
+    throw parseValidationError("notificationEnabled must be a boolean");
   }
 
-  return notificationsEnabled;
+  return notificationEnabled;
 }
 
 function normalizeOptionalDate(value) {
@@ -93,7 +93,7 @@ function assignPushDeviceFields(pushDevice, params, requestUser) {
   pushDevice.set("anonymousPerformanceId", params.anonymousPerformanceId);
   pushDevice.set("appVersion", params.appVersion);
   pushDevice.set("buildNumber", params.buildNumber);
-  pushDevice.set("notificationsEnabled", params.notificationsEnabled);
+  pushDevice.set("notificationEnabled", params.notificationEnabled);
   pushDevice.set("lastPermissionStatus", params.lastPermissionStatus);
   pushDevice.set("lastRegisteredAt", params.lastRegisteredAt);
 
@@ -111,7 +111,7 @@ function validateAndNormalizeParams(params) {
     anonymousPerformanceId: params.anonymousPerformanceId,
     appVersion: params.appVersion,
     buildNumber: params.buildNumber,
-    notificationsEnabled: validateNotificationsEnabled(params.notificationsEnabled),
+    notificationEnabled: validateNotificationEnabled(params.notificationEnabled),
     lastPermissionStatus: params.lastPermissionStatus,
     lastRegisteredAt: normalizeOptionalDate(params.lastRegisteredAt),
   };
