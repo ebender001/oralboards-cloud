@@ -56,34 +56,17 @@ function validateNotificationEnabled(notificationEnabled) {
   return notificationEnabled;
 }
 
-function normalizeOptionalString(value, fieldName) {
-  if (value === undefined || value === null) {
-    return value;
-  }
-
+function normalizeRequiredString(value, fieldName) {
   if (typeof value !== "string") {
     throw parseValidationError(`${fieldName} must be a string`);
   }
 
-  return value.trim();
-}
-
-function normalizeChannels(channels) {
-  if (channels === undefined || channels === null) {
-    return [];
+  const normalized = value.trim();
+  if (!normalized) {
+    throw parseValidationError(`${fieldName} cannot be empty`);
   }
 
-  if (!Array.isArray(channels)) {
-    throw parseValidationError("channels must be an array of strings");
-  }
-
-  return channels.map((channel) => {
-    if (typeof channel !== "string") {
-      throw parseValidationError("channels must contain only strings");
-    }
-
-    return channel.trim();
-  }).filter(Boolean);
+  return normalized;
 }
 
 function normalizeOptionalDate(value) {
@@ -126,8 +109,8 @@ function assignPushDeviceFields(pushDevice, params, requestUser) {
   pushDevice.set("notificationEnabled", params.notificationEnabled);
   pushDevice.set("lastPermissionStatus", params.lastPermissionStatus);
   pushDevice.set("lastRegisteredAt", params.lastRegisteredAt);
-  pushDevice.set("channels", params.channels);
   pushDevice.set("selectedSpecialty", params.selectedSpecialty);
+  pushDevice.set("channels", [params.selectedSpecialty]);
 
   if (requestUser) {
     pushDevice.set("user", requestUser);
@@ -146,8 +129,7 @@ function validateAndNormalizeParams(params) {
     notificationEnabled: validateNotificationEnabled(params.notificationEnabled),
     lastPermissionStatus: params.lastPermissionStatus,
     lastRegisteredAt: normalizeOptionalDate(params.lastRegisteredAt),
-    channels: normalizeChannels(params.channels),
-    selectedSpecialty: normalizeOptionalString(params.selectedSpecialty, "selectedSpecialty"),
+    selectedSpecialty: normalizeRequiredString(params.selectedSpecialty, "selectedSpecialty"),
   };
 }
 
