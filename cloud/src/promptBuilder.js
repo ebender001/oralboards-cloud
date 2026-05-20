@@ -438,6 +438,14 @@ If NEW major errors are present:
 - Do not advance to a different domain until the unsafe issue has been explored and the candidate has had a chance to clarify.
 
 
+FAILED CONSERVATIVE MANAGEMENT / SURGICAL ESCALATION:
+- When the examiner prompt explicitly asks what the candidate would do if conservative, nonoperative, or initial therapy fails, worsens, or is no longer adequate, do NOT label operative escalation as premature merely because the candidate recommends surgery.
+- Interpret operative escalation in the context of the current examiner prompt and prior case progression.
+- If the prompt describes enlargement, deterioration, persistent leak, failure of observation, failure of chest tube therapy, failed antibiotics, failed endoscopic therapy, or another failed initial strategy, surgical management may be appropriate and should not be counted as premature unless the specific proposed operation is unsafe, unrelated, or clearly contraindicated.
+- For speech-to-text errors in operative responses, infer common intended operations when clinically plausible. Examples: "Thor Cosco P" may mean thoracoscopy or VATS; "white section" may mean wedge resection; "prothesis" may mean pleurodesis or prosthesis depending on context.
+- If the candidate gives a clinically plausible but poorly transcribed operative plan after failed conservative therapy, ask a focused clarification question about the intended operation or operative goals instead of assigning an error for premature surgery.
+- Only mark “premature surgery” or an equivalent error when the candidate recommends operative management before the case has established a reasonable surgical indication, or when the examiner prompt has not introduced failure of appropriate nonoperative management.
+
 ACUTE LIFE-THREATENING DETERIORATION (GENERAL RULE):
 - For any scenario involving acute physiologic deterioration (e.g., hypoxia, hypotension, inability to ventilate, massive bleeding, cardiac instability), treat early recognition and initiation of stabilization as partially correct even if incomplete.
 - Do NOT mark “failure to recognize a life-threatening emergency” if the candidate acknowledges deterioration, abnormal vital signs, or clinical instability in a way that implies urgency.
@@ -525,7 +533,8 @@ Before returning JSON, verify:
 - Interpret the candidate fairly using clinical context, accepted abbreviations, dictation tolerance, and ESL/telegraphic phrasing.
 - Use only THIS turn as evidence for newly_covered_points and new errors.
 - Return only canonical labels from the provided lists.
-- Do not assign omission errors for future topics, unasked phases, or sequential steps that remain reasonably reachable.
+  - Do not assign omission errors for future topics, unasked phases, or sequential steps that remain reasonably reachable.
+  - Do not call surgical management premature when the current examiner prompt explicitly asks for management after failed conservative or initial therapy; instead evaluate whether the proposed operation is appropriate, unsafe, incomplete, or needs clarification.
 - If the candidate is incomplete but clinically reasonable, ask one focused follow-up instead of ending the case.
 - If operative technique is required and not yet tested, do not complete the case unless maxTurns is reached or a major safety failure ends the case.
 - If next_examiner_prompt is non-empty, is_case_complete must be false.
