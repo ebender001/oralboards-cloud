@@ -3,9 +3,34 @@ function requireGlobalAdmin(request) {
     throw new Parse.Error(Parse.Error.SESSION_MISSING, "Authentication required");
   }
 
-  if (request.user.get("role") !== "global_admin") {
+  if (getUserRoleKey(request.user) !== "global_admin") {
     throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, "Only global_admin users can manage institutions.");
   }
+}
+
+function requireUserManager(request) {
+  if (!request.user) {
+    throw new Parse.Error(Parse.Error.SESSION_MISSING, "Authentication required");
+  }
+
+  const roleKey = getUserRoleKey(request.user);
+  if (roleKey !== "global_admin" && roleKey !== "institution_admin") {
+    throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, "Only global_admin and institution_admin users can view institutions.");
+  }
+}
+
+function getUserRoleKey(user) {
+  const roleKey = user.get("roleKey");
+  if (roleKey) {
+    return roleKey;
+  }
+
+  const role = user.get("role");
+  if (typeof role === "string") {
+    return role;
+  }
+
+  return role?.get?.("roleKey") || "";
 }
 
 function normalizeOptionalDate(value) {
@@ -90,14 +115,24 @@ Parse.Cloud.define("upsertInstitution", async (request) => {
 });
 
 Parse.Cloud.define("listInstitutions", async (request) => {
-  requireGlobalAdmin(request);
+  requireUserManager(request);
 
   const Institution = Parse.Object.extend("Institution");
   const query = new Parse.Query(Institution);
   query.ascending("name");
   query.limit(1000);
 
-  const institutions = await query.find({ useMasterKey: true });
+  let institutions;
+  if (getUserRoleKey(request.user) === "institution_admin") {
+    const institution = request.user.get("institution");
+    if (!institution) {
+      throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, "Institution admins must be assigned to an institution.");
+    }
+    institutions = [await query.get(institution.id, { useMasterKey: true })];
+  } else {
+    institutions = await query.find({ useMasterKey: true });
+  }
+
   return institutions.map(serializeInstitution);
 });
 
