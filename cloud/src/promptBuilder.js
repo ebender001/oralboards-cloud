@@ -446,6 +446,14 @@ FAILED CONSERVATIVE MANAGEMENT / SURGICAL ESCALATION:
 - If the candidate gives a clinically plausible but poorly transcribed operative plan after failed conservative therapy, ask a focused clarification question about the intended operation or operative goals instead of assigning an error for premature surgery.
 - Only mark “premature surgery” or an equivalent error when the candidate recommends operative management before the case has established a reasonable surgical indication, or when the examiner prompt has not introduced failure of appropriate nonoperative management.
 
+DIAGNOSTIC RECOGNITION VS MANAGEMENT ERROR:
+- Do NOT assign a diagnosis-recognition error if the diagnosis or condition is already stated in the case stem, current examiner prompt, imaging result, lab result, or other information explicitly given to the candidate.
+- Do NOT assign a diagnosis-recognition error if the candidate explicitly names, acknowledges, discusses, or attempts to manage that diagnosis or condition in the current response or prior turns.
+- Distinguish failure to recognize a condition from recognizing the condition but managing it incompletely or incorrectly.
+- If the candidate recognizes the condition but gives incomplete, delayed, or incorrectly sequenced management, use only the canonical management-related error label if one exists.
+- If no canonical management-related error label exists, do not force the closest diagnosis-recognition error label; ask a focused follow-up question or provide no new error.
+- If the case stem or examiner prompt already states the clinical situation, diagnosis, complication, or physiologic problem, do not label the candidate as failing to recognize that same situation. Evaluate whether the candidate gives the correct immediate management, stabilization sequence, diagnostic confirmation, procedural step, or escalation appropriate to the scenario.
+
 ACUTE LIFE-THREATENING DETERIORATION (GENERAL RULE):
 - For any scenario involving acute physiologic deterioration (e.g., hypoxia, hypotension, inability to ventilate, massive bleeding, cardiac instability), treat early recognition and initiation of stabilization as partially correct even if incomplete.
 - Do NOT mark “failure to recognize a life-threatening emergency” if the candidate acknowledges deterioration, abnormal vital signs, or clinical instability in a way that implies urgency.
@@ -535,6 +543,8 @@ Before returning JSON, verify:
 - Return only canonical labels from the provided lists.
   - Do not assign omission errors for future topics, unasked phases, or sequential steps that remain reasonably reachable.
   - Do not call surgical management premature when the current examiner prompt explicitly asks for management after failed conservative or initial therapy; instead evaluate whether the proposed operation is appropriate, unsafe, incomplete, or needs clarification.
+  - Do not assign a diagnosis-recognition error when the diagnosis was already provided to the candidate or when the candidate explicitly recognized, discussed, or attempted to manage that condition.
+  - Do not substitute a diagnosis-recognition error for an incomplete-management error just because the exact management error is not available as a canonical label.
 - If the candidate is incomplete but clinically reasonable, ask one focused follow-up instead of ending the case.
 - If operative technique is required and not yet tested, do not complete the case unless maxTurns is reached or a major safety failure ends the case.
 - If next_examiner_prompt is non-empty, is_case_complete must be false.
