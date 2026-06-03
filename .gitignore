@@ -27,6 +27,7 @@ tmp/
 # Editor / IDE
 .vscode/
 .idea/
+*.code-workspace
 
 # Backup / junk files (your current pain point)
 *.bak
