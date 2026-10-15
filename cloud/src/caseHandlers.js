@@ -385,7 +385,6 @@ Parse.Cloud.define("submitOralResponse", async (request) => {
   const response = await openai.responses.create({
     model: OPENAI_MODEL,
     input: prompt,
-    temperature: 0.2,
     text: {
       format: {
         type: "json_schema",
