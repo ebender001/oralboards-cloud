@@ -14,6 +14,3 @@ require('./src/caseHandlers');
 require('./src/logPerformance.js');
 require('./src/examSessionVisualization.js');
 require('./src/push/registerPushDevice');
-
-// TEMP: remove after checking Node version
-Parse.Cloud.define("nodeVersion", async () => process.version);
